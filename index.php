@@ -4,11 +4,17 @@ require_once("vendor/autoload.php");
 
 $app = new \Slim\Slim();
 
+// mostra os erros explicados
 $app->config('debug', true);
 
+// rota principal
 $app->get('/', function() {
     
-	echo "OK";
+	$sql = new Hcode\DB\Sql();
+
+	$results = $sql->select("SELECT * FROM tb_users");
+
+	echo json_encode($results);
 
 });
 
