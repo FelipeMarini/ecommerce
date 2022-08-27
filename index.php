@@ -4,6 +4,7 @@ require_once("vendor/autoload.php");
 
 use \Slim\Slim;
 use \Hcode\Page;
+use \Hcode\PageAdm;
 
 
 $app = new Slim();
@@ -32,6 +33,16 @@ $app->get('/', function() {
 	// no final o destruct chama o footer
 
 });
+
+
+$app->get('/admin', function() {
+
+	$page = new PageAdm();
+
+	$page->setTpl("index");
+
+});
+
 
 
 $app->run();
