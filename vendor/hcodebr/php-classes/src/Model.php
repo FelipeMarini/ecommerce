@@ -1,5 +1,6 @@
 <?php
 
+//estudar bem essa classe Model
 
 namespace Hcode;
 
