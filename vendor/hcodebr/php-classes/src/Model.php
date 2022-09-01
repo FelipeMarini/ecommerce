@@ -30,7 +30,7 @@ class Model {
 		switch ($method) {
 			
 			case 'get':
-				return $this->values[$field];
+				return (isset($this->values[$field])) ? $this->values[$field] : NULL;
 			break;
 
 			case 'set':

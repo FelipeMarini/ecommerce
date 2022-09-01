@@ -3,13 +3,14 @@
 session_start();
 
 // pesquisar para o que serve o "exit;"" na hora de fazer o redirecionamento (Ex: header("Location: (rota)"))
-
+// truncate table no banco reseta os ids para não continuarem em ordem crescente
 require_once("vendor/autoload.php");
 
 use \Slim\Slim;
 use \Hcode\Page;
 use \Hcode\PageAdm;
 use \Hcode\Model\User;
+use \Hcode\Model\Category;
 
 
 $app = new Slim();
@@ -183,6 +184,219 @@ $app->post('/admin/users/:iduser', function($iduser) {
 
 	header("Location: /admin/users");
 	exit;
+
+});
+
+
+$app->get('/admin/forgot', function() {
+
+	$page = new PageAdm([
+
+		"header"=>false,
+		"footer"=>false
+
+	]);
+
+	$page->setTpl("forgot");
+
+});
+
+
+$app->post('/admin/forgot', function() {
+
+	// ["email"] é igual a name="email" (parâmetro name do input de email do formulário que tem method="post" em forgot.html)
+	$user = User::getForgot($_POST["email"]);
+
+	header("Location: /admin/forgot/sent");	
+	exit;
+
+});
+
+
+$app->get('/admin/forgot/sent', function() {
+
+	$page = new PageAdm([
+
+		"header"=>false,
+		"footer"=>false
+
+	]);
+
+	$page->setTpl("forgot-sent");
+
+});
+
+
+$app->get('/admin/forgot/reset', function() {
+
+
+	$user = User::validForgotDecrypt($_GET["code"]);
+
+
+	$page = new PageAdm([
+
+		"header"=>false,
+		"footer"=>false
+
+	]);
+
+	$page->setTpl("forgot-reset", array(
+
+		"name"=>$user["desperson"],
+		"code"=>$_GET["code"]
+
+	));
+
+});
+
+
+$app->post('/admin/forgot/reset', function() {
+
+	//******************************************************************************
+	$forgot = User::validForgotDecrypt($_GET["code"]);
+
+	User::setForgotUsed($forgot["idrecovery"]);
+
+	$user = new User();
+
+	$user->get((int)$forgot["iduser"]);
+
+
+	$password = password_hash($_POST["password"], PASSWORD_DEFAULT,[
+
+		// custo de processamento para gerar um novo hash (buscar equilíbrio para não derrubar o servidor)
+		"cost"=>12
+
+	]);
+
+
+	// salva a nova senha redefinida pelo link recebido no email (com novo hash gerado) (dentro de 1 hora do envio pelo site) no banco
+	$user->setPassword($password);
+
+	$page = new PageAdm([
+
+		"header"=>false,
+		"footer"=>false
+
+	]);
+
+	$page->setTpl("forgot-reset-success");
+
+});
+
+
+$app->get('/admin/categories', function() {
+
+	User::verifyLogin();
+
+	$categories = Category::listAll();
+
+	$page = new PageAdm();
+
+	$page->setTpl("categories", array(
+
+		"categories"=>$categories
+
+	));
+
+});
+
+$app->get('/admin/categories/create', function() {
+
+	User::verifyLogin();
+
+	$page = new PageAdm();
+
+	$page->setTpl("categories-create");
+
+});
+
+
+$app->post('/admin/categories/create', function() {
+
+	User::verifyLogin();
+
+	$category = new Category();
+
+	$category->setData($_POST);
+
+	$category->save();
+
+	header("Location: /admin/categories");
+	exit;
+
+});
+
+
+$app->get('/admin/categories/:idcategory/delete', function($idcategory) {
+
+	User::verifyLogin();
+
+	$category = new Category();
+
+	$category->get((int)$idcategory);
+
+	$category->delete();
+
+	header("Location: /admin/categories");
+	exit;
+
+});
+
+
+$app->get('/admin/categories/:idcategory', function($idcategory) {
+
+	User::verifyLogin();
+
+	$category = new Category();
+
+	$category->get((int)$idcategory);
+
+	$page = new PageAdm();
+
+	$page->setTpl("categories-update", array(
+
+		// "categories" é a variável presente no template (fazemos o bind aqui (array))
+		"category"=>$category->getValues()
+
+	));
+
+});
+
+
+$app->post('/admin/categories/:idcategory', function($idcategory) {
+
+	User::verifyLogin();
+
+	$category = new Category();
+
+	$category->get((int)$idcategory);
+
+	$category->setData($_POST);
+
+	$category->save();
+
+	header("Location: /admin/categories");
+	exit;
+
+});
+
+
+$app->get('/categories/:idcategory', function($idcategory) {
+
+	$category = new Category();
+
+	$category->get((int)$idcategory);
+
+	$page = new Page();
+
+	$page->setTpl("category", [
+
+		"category"=>$category->getValues(),
+		"products"=>[]
+
+	]);
+
 
 });
 
